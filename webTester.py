@@ -90,7 +90,7 @@ for x in range(config.searchlevel):
 
 		links = re.findall(r"<a.*?\s*href=\"(.*?)\".*?>.*?</a>", page)
 		for link in links:
-			print('href: %s' % (link))
+			#print('href: %s' % (link))
 			
 			# ignorujeme odkazy na maily
 			if link.find('mailto') > 0:
