@@ -1,2 +1,3 @@
 moznost ulozti si nalezene url do souboru a pak je nacit misto noveho hledani, na rozhodnuti uzivatele
 Moznost vypisovat vystup bud do konzole nebo do souboru
+Moznost neustale v nejakych intervalech zvedat pocet klientu po urcitych krocich a vypisovat o tom info - ramp up
