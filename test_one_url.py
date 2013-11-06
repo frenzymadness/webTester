@@ -9,7 +9,7 @@ from thread import start_new_thread
 def get_content(url):
 	content = urllib2.urlopen(url)
 	content = content.read()
-	print "Url downloaded in thred %s" % (url)
+	print "Test"
 
 # url zadana jako prvni parametr
 url = sys.argv[1]
@@ -25,16 +25,10 @@ js_links = re.findall(r"<script.*?\s*src=\"(.*?)\".*?", page)
 
 links = image_links + css_links + js_links
 
-print links;
-
-print image_links
-print css_links
-print js_links
+print links
 
 for url in links:
-	print "Start download %s" % (url)
 	start_new_thread(get_content,(url,))
-	print "End download %s" % (url)
 
 end_time = time.time()
 
