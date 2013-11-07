@@ -72,64 +72,82 @@ starttime = time.time()
 # dalsi promenne
 urlcounter = 0
 
-print 'Zahajuji hledani url adres do urovne %d od %s' % (config.searchlevel,config.baseurl)
-# projdeme v urcitem poctu kroku vsechny url a hledame dalsi nastevou tech nalezenych
-for x in range(config.searchlevel):
-	# pri prvnim pruchodu zacneme od zakladni adresy
-	if x == 0:
-		searchurls.append(config.baseurl)
-	for url in searchurls:
-		urlcounter += 1
-		
-		try:
-			page = urllib2.urlopen(url)
-			page = page.read()
-		except urllib2.HTTPError, e:
-			urls.remove(url)
-			continue
-		except urllib2.URLError, e:
-			urls.remove(url)
-			continue
+# pokusime se nacist db ze souboru a pak ji nabidnout uzivateli misto noveho hledani
+try:
+	md5name = hashlib.md5(config.baseurl).hexdigest()
+	urlsfile = open('./databases/' + md5name, 'r')
+	for line in urlsfile:
+		urls.append(line)
+	urlsfile.close()
 
-		links = re.findall(r"<a.*?\s*href=\"(.*?)\".*?>.*?</a>", page)
-		for link in links:
-			#print('href: %s' % (link))
+	# dotaz, zda chce uzivatel nalezenou db pouzit, pokud ne, smazeme ji
+	response = raw_input('Nalezena ulozena databaze url adres obsahujici %d zaznamu. Chcete ji pouzit? [y/n]: ' % len(urls))
+	if response == 'n':
+		urls = []
+		
+except IOError:
+	print "Nenalezena vhodnou databazi na disku, bude provedeno nove hledani"
+
+# pokud je pole s url adresami prazdne (nenasla se db, nebo ji usr nechtel pouzit) provedeme nove hledani
+if len(urls) == 0:
+	print 'Zahajuji hledani url adres do urovne %d od %s' % (config.searchlevel,config.baseurl)
+	# projdeme v urcitem poctu kroku vsechny url a hledame dalsi nastevou tech nalezenych
+	for x in range(config.searchlevel):
+		# pri prvnim pruchodu zacneme od zakladni adresy
+		if x == 0:
+			searchurls.append(config.baseurl)
+		for url in searchurls:
+			urlcounter += 1
 			
-			# ignorujeme odkazy na maily
-			if link.find('mailto') > 0:
+			try:
+				page = urllib2.urlopen(url)
+				page = page.read()
+			except urllib2.HTTPError, e:
+				urls.remove(url)
 				continue
-			
-			# pokud link neobsahuje baseurl a nejedna se o relativni adresu, preskocime jej
-			if link.find(config.baseurl) < 0:
-				# print('link neobsahuje baseurl')
-				# pokud link zacina teckou, jedna se o relativni adresu a v tom pripade ji prevedeme na absolutni
-				if link.find('.') == 0:
-					link = link.replace('.',config.baseurl,1)
-					# print('jedna se o relativni adresu')
-					# a pridame do pole, pokud tam jiz neni
+			except urllib2.URLError, e:
+				urls.remove(url)
+				continue
+
+			links = re.findall(r"<a.*?\s*href=\"(.*?)\".*?>.*?</a>", page)
+			for link in links:
+				#print('href: %s' % (link))
+				
+				# ignorujeme odkazy na maily
+				if link.find('mailto') > 0:
+					continue
+				
+				# pokud link neobsahuje baseurl a nejedna se o relativni adresu, preskocime jej
+				if link.find(config.baseurl) < 0:
+					# print('link neobsahuje baseurl')
+					# pokud link zacina teckou, jedna se o relativni adresu a v tom pripade ji prevedeme na absolutni
+					if link.find('.') == 0:
+						link = link.replace('.',config.baseurl,1)
+						# print('jedna se o relativni adresu')
+						# a pridame do pole, pokud tam jiz neni
+						if link not in addurls:
+							addurls.append(link)
+					# pokud link zacina lomitkem, jedna se o relativni adresu a v tom pripade ji spojime s baseurl
+					if link.find('/') == 0:
+						link = config.baseurl + link
+						# print('jedna se o relativni adresu')
+						# a pridame do pole, pokud tam jiz neni
+						if link not in addurls:
+							addurls.append(link)
+				else:
+					# ty, ktere baseurl obsahuji priradime do seznamu hned
 					if link not in addurls:
 						addurls.append(link)
-				# pokud link zacina lomitkem, jedna se o relativni adresu a v tom pripade ji spojime s baseurl
-				if link.find('/') == 0:
-					link = config.baseurl + link
-					# print('jedna se o relativni adresu')
-					# a pridame do pole, pokud tam jiz neni
-					if link not in addurls:
-						addurls.append(link)
-			else:
-				# ty, ktere baseurl obsahuji priradime do seznamu hned
-				if link not in addurls:
-					addurls.append(link)
-							
-	# pridame nove url do hlavniho pole
-	for url in addurls:
-		if url not in urls:
-			urls.append(url)
-			
-	# sestavime pole pro vyhledavani v dalsi iteraci
-	searchurls = []
-	for url in addurls:
-		searchurls.append(url)
+								
+		# pridame nove url do hlavniho pole
+		for url in addurls:
+			if url not in urls:
+				urls.append(url)
+				
+		# sestavime pole pro vyhledavani v dalsi iteraci
+		searchurls = []
+		for url in addurls:
+			searchurls.append(url)
 	
 #######################################
 ### hlavni program - sourhn hledani ###
