@@ -1,5 +1,5 @@
 # na ktere url mame zacit? bez posledniho lomitka
-baseurl = "http://www.atria.sk"
+baseurl = "http://www.netdevelo.cz"
 # jak moc do hloubky se pujde pri hledani url <1,x>
 searchlevel = 2
 # kolik klientu budeme simulovat?

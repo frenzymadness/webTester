@@ -2,15 +2,14 @@
 # -*- coding: utf-8 -*-
 
 # Program pro testování webové aplikace, který z ní sesbírá linky
-# rekurzivně do určité úrovně a následně simuluje klienty tak, že ve vláknech
+# rekurzivně do určité úrovně a následně simuluje klienty tak, že v samostatnych procesech
 # tyto odkazy navštěvuje a zaznamenává čas odezvy a stavový kód odpovědi
 
 # import konfigura4n9ho souboru
 import config
 
 # import dalsich komponent
-import sys,os,time,urllib,lxml
-
+import sys,os,time,urllib,lxml,hashlib
 import urllib2
 import re
 
@@ -20,7 +19,10 @@ import random
 # modul pro zpracovani procesu
 import multiprocessing
 
-# funkce, ktera simuluje chovani klienta
+##############################################
+### funkce, ktera simuluje chovani klienta ###
+##############################################
+
 def client(urls,delay=0,randomdelay=False,mindelay=1,maxdelay=10):
 	# ziskame jmeno processu
 	name = multiprocessing.current_process().name
@@ -52,8 +54,9 @@ def client(urls,delay=0,randomdelay=False,mindelay=1,maxdelay=10):
 			statuscode = 200
 		print '%s;%d;%d;%.4f;%d;%s' % (name,x,delay,endtime-starttime,statuscode,url)
 		
-
-# hlavni program, kde nejdrive naplnime pole s url adresami a pak spustime vlakna
+##########################################
+### hlavni program - hledani url adres ###
+##########################################
 
 # pole pro url adresy
 # hlavni pole uchovavajici vysledky
@@ -128,11 +131,32 @@ for x in range(config.searchlevel):
 	for url in addurls:
 		searchurls.append(url)
 	
-#print urls
+#######################################
+### hlavni program - sourhn hledani ###
+#######################################
+	
 # vytiskneme informace o zpracovanych adresach
 print 'Celkem prohledano %d url adres a nalezeno %d pouzitelnych' % (urlcounter,len(urls))
 print 'Hledani url do %d urovne trval %.4f sekund' % (config.searchlevel, time.time() - starttime)
-response = raw_input("Pro pokracovani stiskni Enter")
+
+# ulozeni vysledku hledani url do souboru
+response = raw_input("Ulozit databazi url adres pro pozdejsi pouziti? [y/n]: ")
+if response == 'y':
+	# vypocteme md5 url pro nazev souboru
+	md5name = hashlib.md5(config.baseurl).hexdigest()
+	# ulozime pole o souboru
+	urlsfile = open('./databases/' + md5name, 'w')
+	for line in urls:
+		urlsfile.write(line + '\n')
+	urlsfile.close()
+
+
+#######################################
+### hlavni program - start simulace ###
+#######################################
+
+response = raw_input("Pro spusteni testu stiskni Enter")
+
 print 'Spoustim simulaci %d klientu.' % (config.clientscount)
 
 # spustime processy, ktere simuluji klienty
