@@ -23,7 +23,7 @@ import multiprocessing
 ### funkce, ktera simuluje chovani klienta ###
 ##############################################
 
-def client(urls,delay=0,randomdelay=False,mindelay=1,maxdelay=10):
+def client(urls,delay=0,randomdelay=False,mindelay=1,maxdelay=10,outputfilename=''):
 	# ziskame jmeno processu
 	name = multiprocessing.current_process().name
 	# pockame nahodne zvolenou dobu pred zacatkem prohlizeni
@@ -52,7 +52,11 @@ def client(urls,delay=0,randomdelay=False,mindelay=1,maxdelay=10):
 		# pokud nemame chybovy kod, je vse OK
 		if statuscode == 0:
 			statuscode = 200
-		print '%s;%d;%d;%.4f;%d;%s' % (name,x,delay,endtime-starttime,statuscode,url)
+		if outputfilename == '':
+			print '%s;%d;%d;%.4f;%d;%s' % (name,x,delay,endtime-starttime,statuscode,url)
+		else:
+			with open(outputfilename, "a") as outputfile:
+				outputfile.write('%s;%d;%d;%.4f;%d;%s\n' % (name,x,delay,endtime-starttime,statuscode,url))
 		
 ##########################################
 ### hlavni program - hledani url adres ###
@@ -77,7 +81,7 @@ try:
 	md5name = hashlib.md5(config.baseurl).hexdigest()
 	urlsfile = open('./databases/' + md5name, 'r')
 	for line in urlsfile:
-		urls.append(line)
+		urls.append(line.strip('\n'))
 	urlsfile.close()
 
 	# dotaz, zda chce uzivatel nalezenou db pouzit, pokud ne, smazeme ji
@@ -86,7 +90,7 @@ try:
 		urls = []
 		
 except IOError:
-	print "Nenalezena vhodnou databazi na disku, bude provedeno nove hledani"
+	print "Nenalezena vhodna databaze na disku, bude provedeno nove hledani"
 
 # pokud je pole s url adresami prazdne (nenasla se db, nebo ji usr nechtel pouzit) provedeme nove hledani
 if len(urls) == 0:
@@ -149,30 +153,36 @@ if len(urls) == 0:
 		for url in addurls:
 			searchurls.append(url)
 	
-#######################################
-### hlavni program - sourhn hledani ###
-#######################################
-	
-# vytiskneme informace o zpracovanych adresach
-print 'Celkem prohledano %d url adres a nalezeno %d pouzitelnych' % (urlcounter,len(urls))
-print 'Hledani url do %d urovne trval %.4f sekund' % (config.searchlevel, time.time() - starttime)
+	#######################################
+	### hlavni program - sourhn hledani ###
+	#######################################
+		
+	# vytiskneme informace o zpracovanych adresach
+	print 'Celkem prohledano %d url adres a nalezeno %d pouzitelnych' % (urlcounter,len(urls))
+	print 'Hledani url do %d urovne trval %.4f sekund' % (config.searchlevel, time.time() - starttime)
 
-# ulozeni vysledku hledani url do souboru
-response = raw_input("Ulozit databazi url adres pro pozdejsi pouziti? [y/n]: ")
+	# ulozeni vysledku hledani url do souboru
+	response = raw_input("Ulozit databazi url adres pro pozdejsi pouziti? [y/n]: ")
+	if response == 'y':
+		# vypocteme md5 url pro nazev souboru
+		md5name = hashlib.md5(config.baseurl).hexdigest()
+		# ulozime pole o souboru
+		urlsfile = open('./databases/' + md5name, 'w')
+		for line in urls:
+			urlsfile.write(line + '\n')
+		urlsfile.close()
+
+# moznost nechat procesy vypisovat d souboru misto standartnivy vystupu
+response = raw_input("Vypisovat vystup procesu do souboru? [y/n]: ")
 if response == 'y':
-	# vypocteme md5 url pro nazev souboru
-	md5name = hashlib.md5(config.baseurl).hexdigest()
-	# ulozime pole o souboru
-	urlsfile = open('./databases/' + md5name, 'w')
-	for line in urls:
-		urlsfile.write(line + '\n')
-	urlsfile.close()
-
+	outputfilename = str(starttime) + '.output'
+else:
+	outputfilename = ''
 
 #######################################
 ### hlavni program - start simulace ###
 #######################################
-
+print 'Bude spusteno celkem %d klientu a kazdy bude simulovat %d requestu na web %s.' % (config.clientscount, config.requestperclient, config.baseurl)
 response = raw_input("Pro spusteni testu stiskni Enter")
 
 print 'Spoustim simulaci %d klientu.' % (config.clientscount)
@@ -181,7 +191,7 @@ print 'Spoustim simulaci %d klientu.' % (config.clientscount)
 if __name__ == '__main__':
 	processes = []
 	for x in range(config.clientscount):
-		p = multiprocessing.Process(name=str(x), target=client, args=(urls,config.delay,config.randomdelay,config.mindelay,config.maxdelay))
+		p = multiprocessing.Process(name=str(x), target=client, args=(urls,config.delay,config.randomdelay,config.mindelay,config.maxdelay,outputfilename))
 		processes.append(p)
 		print 'Spoustim process cislo %d' % (x)
 		p.start()

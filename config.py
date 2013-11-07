@@ -1,11 +1,11 @@
 # na ktere url mame zacit? bez posledniho lomitka
-baseurl = "http://www.netdevelo.cz"
+baseurl = "http://www.cssd.cz"
 # jak moc do hloubky se pujde pri hledani url <1,x>
-searchlevel = 2
+searchlevel = 1
 # kolik klientu budeme simulovat?
-clientscount = 100
+clientscount = 10
 # kolik requestu maji uzivatele udelat
-requestperclient = 100
+requestperclient = 10
 # bude cas mezi navstevami jednotlivych url nahodny? Pokud ne, bude delay pevne nastaven
 randomdelay = True
 delay = 0
